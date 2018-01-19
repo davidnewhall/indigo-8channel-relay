@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<Actions>
+	<Action id="pulseRelay" deviceFilter="self">
+		<Name>Send Relay Pulse Signal</Name>
+		<CallbackMethod>_pulse_relay</CallbackMethod>
+	</Action>
+	<Action id="resetPulseCount" deviceFilter="self">
+		<Name>Reset Pulse Count</Name>
+		<CallbackMethod>_reset_pulse_count</CallbackMethod>
+	</Action>
+</Actions>

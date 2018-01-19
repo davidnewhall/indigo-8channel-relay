@@ -1,0 +1,115 @@
+<?xml version="1.0"?>
+<Devices>
+	<DeviceFactory>
+		<Name>Configure 8 Channel Network Relay Board</Name>
+		<ButtonTitle>Save</ButtonTitle>
+		<ConfigUI>
+
+			<Field id="address" type="textfield" defaultValue="192.168.1.166">
+				<Label>Network Relay IP Address:</Label>
+			</Field>
+			<Field id="port" type="textfield" readonly="true" defaultValue="1234" tooltip="If your device runs on a different port it probably does not work with this plugin">
+				<Label>Port:</Label>
+			</Field>
+
+			<Field type="separator" id="simpleSeparator0" />
+
+			<Field type="list" id="deviceGroupList">
+				<Label>Device Group (8 Max):</Label>
+				<List class="self" method="_get_device_list" dynamicReload="true" />
+			</Field>
+			<Field type="separator" id="simpleSeparator1" />
+
+			<Field type="button" id="addRelayDevice">
+				<Title>Add Relay</Title>
+				<CallbackMethod>_add_relay</CallbackMethod>
+			</Field>
+			<Field type="button" id="addInputSensor">
+				<Title>Add Input</Title>
+				<CallbackMethod>_add_sensor</CallbackMethod>
+			</Field>
+
+
+			<Field type="separator" id="simpleSeparator2" />
+
+			<Field type="button" id="removeRelayDevices">
+				<Title>Remove Relays</Title>
+				<CallbackMethod>_remove_relay_devices</CallbackMethod>
+			</Field>
+			<Field type="button" id="removeInputSensors">
+				<Title>Remove Inputs</Title>
+				<CallbackMethod>_remove_input_sensors</CallbackMethod>
+			</Field>
+			<Field type="button" id="removeAllDevices">
+				<Title>Delete All</Title>
+				<CallbackMethod>_remove_all_devices</CallbackMethod>
+			</Field>
+		</ConfigUI>
+	</DeviceFactory>
+
+	<Device type="sensor" id="Sensor">
+		<Name>Input Sensor</Name>
+		<ConfigUI>
+			<Field id="channel" type="menu">
+				<Label>Sensor Input Channel:</Label>
+				<List>
+					<Option value="1">Input 1</Option>
+					<Option value="2">Input 2</Option>
+					<Option value="3">Input 3</Option>
+					<Option value="4">Input 4</Option>
+					<Option value="5">Input 5</Option>
+					<Option value="6">Input 6</Option>
+					<Option value="7">Input 7</Option>
+					<Option value="8">Input 8</Option>
+				</List>
+			</Field>
+			<Field id="address" type="textfield" hidden="true"><Label>Address:</Label></Field>
+			<Field id="port" type="textfield" hidden="true"><Label>Port:</Label></Field>
+			<Field id="username" type="textfield" hidden="true"><Label>Username:</Label></Field>
+			<Field id="password" type="textfield" hidden="true"><Label>Password:</Label></Field>
+			<Field id="timeout" type="textfield" hidden="true"><Label>Timeout:</Label></Field>
+			<Field id="interval" type="textfield" hidden="true"><Label>Interval:</Label></Field>
+		</ConfigUI>
+	</Device>
+
+	<Device type="relay" id="Relay">
+		<Name>On or Off Relay</Name>
+		<ConfigUI>
+			<Field id="channel" type="menu">
+				<Label>Relay Channel:</Label>
+				<List>
+					<Option value="1">Relay 1</Option>
+					<Option value="2">Relay 2</Option>
+					<Option value="3">Relay 3</Option>
+					<Option value="4">Relay 4</Option>
+					<Option value="5">Relay 5</Option>
+					<Option value="6">Relay 6</Option>
+					<Option value="7">Relay 7</Option>
+					<Option value="8">Relay 8</Option>
+				</List>
+			</Field>
+			<Field type="button" id="resetPulseCount">
+				<Title>Reset Pulse Count</Title>
+				<CallbackMethod>_reset_device_pulse_count</CallbackMethod>
+			</Field>
+			<Field id="address" type="textfield" hidden="true"><Label>Address:</Label></Field>
+			<Field id="port" type="textfield" hidden="true"><Label>Port:</Label></Field>
+			<Field id="username" type="textfield" hidden="true"><Label>Username:</Label></Field>
+			<Field id="password" type="textfield" hidden="true"><Label>Password:</Label></Field>
+			<Field id="timeout" type="textfield" hidden="true"><Label>Timeout:</Label></Field>
+			<Field id="interval" type="textfield" hidden="true"><Label>Interval:</Label></Field>
+		</ConfigUI>
+		<States>
+			<State id="pulseTimestamp" readonly="YES">
+				<ValueType>String</ValueType>
+				<TriggerLabel>Last Pulse Time</TriggerLabel>
+				<ControlPageLabel>Last Pulse Time</ControlPageLabel>
+			</State>
+			<State id="pulseCount" readonly="YES">
+				<ValueType>Integer</ValueType>
+				<TriggerLabel>Pulse Count</TriggerLabel>
+				<ControlPageLabel>Pulse Count</ControlPageLabel>
+			</State>
+		</States>
+	</Device>
+</Devices>

@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<PluginConfig>
+	<SupportURL>http://github.com/davidnewhall/indigo-8channel-relay</SupportURL>
+
+  <Field type="menu" id="interval" defaultValue="60">
+    <Label>Update Interval (seconds):</Label>
+    <List>
+      <Option value="2">2</Option>
+      <Option value="5">5</Option>
+      <Option value="15">15</Option>
+      <Option value="30">30</Option>
+      <Option value="60">60</Option>
+      <Option value="90">90</Option>
+      <Option value="120">120</Option>
+    </List>
+  </Field>
+
+  <Field type="menu" id="timeout" defaultValue="4">
+    <Label>Request Timeout (seconds):</Label>
+    <List>
+      <Option value="1">1</Option>
+      <Option value="2">2</Option>
+      <Option value="4">4</Option>
+      <Option value="6">6</Option>
+      <Option value="8">8</Option>
+      <Option value="10">10</Option>
+      <Option value="15">15</Option>
+    </List>
+  </Field>
+
+</PluginConfig>
