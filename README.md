@@ -12,7 +12,8 @@ Both documents came from the retailer. Here's a link to the auction (until it go
 
 ## Board Image
 
-![Image of Network Relay Board](BoardImage.png)
+![Image of Network Relay Board](docs/BoardImage.png)
+
 ## Will this work for you?
 
 I have no idea. It works for me. Does your device listen on port 1234? If yes,
