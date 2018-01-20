@@ -10,6 +10,9 @@ This repo includes two technical documents:
 Both documents came from the retailer. Here's a link to the auction (until it goes away):
 - [eBay: 8 Channel Relay Network IP Relay Web Relay Dual Control Ethernet RJ45 US SHIP](https://www.ebay.com/itm/262874035942)
 
+## Board Image
+
+![Image of Network Relay Board](BoardImage.png)
 ## Will this work for you?
 
 I have no idea. It works for me. Does your device listen on port 1234? If yes,
