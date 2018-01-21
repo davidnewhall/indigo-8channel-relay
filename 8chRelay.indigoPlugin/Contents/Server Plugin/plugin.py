@@ -231,36 +231,36 @@ class Plugin(indigo.PluginBase):
     def set_device_states():
         """ Updates Indigo with current devices" states. """
         devs = list()
-        addrs = list()
+        hosts = list()
+        # Build two lists: host/port combos, and (sub)devices.
         for dev in indigo.devices.iter("self"):
             if (dev.enabled and dev.configured and "hostname" in dev.pluginProps
                     and "port" in dev.pluginProps):
                 # Make a list of the plugin"s devices and a set of their hostnames.
-                addrs.append((dev.pluginProps["hostname"], dev.pluginProps["port"]))
+                hosts.append((dev.pluginProps["hostname"], dev.pluginProps["port"]))
                 devs.append(dev)
-        for addr, port in addrs:
+        # Loop each unique host/port combo and poll it for status, then update its devices.
+        for host, port in set(hosts):
             timeout = int(indigo.activePlugin.pluginPrefs.get("timeout", 4))
             try:
-                relay = Telnet(addr, int(port), timeout)
+                relay = Telnet(host, int(port), timeout)
                 relay.write("DUMP\r\n")
-                statuses = relay.read_until("OK", timeout)
+                statuses = relay.read_until("OK", timeout).upper()
                 relay.close()
             except (socket.error, EOFError) as err:
                 for dev in devs:
                     # Update all the sub devices that failed to get queried.
-                    if dev.pluginProps["hostname"] == addr and dev.pluginProps["port"] == port:
+                    if (dev.pluginProps["hostname"], dev.pluginProps["port"]) == (host, port):
                         dev.setErrorStateOnServer(u"Error polling relay device: {}".format(err))
                 return
+            # Update all the devices that belong to this hostname/port.
             for dev in devs:
                 chan = dev.pluginProps.get("channel", -1)
-                if dev.pluginProps["hostname"] != addr or dev.pluginProps["port"] != port:
-                    continue
-                # Update all the devices that belong to this hostname.
-                elif dev.deviceTypeId == "Relay":
-                    state = True if statuses.find("Relayon {}".format(chan)) != -1 else False
-                    dev.updateStateOnServer("onOffState", state)
-                elif dev.deviceTypeId == "Sensor":
-                    state = True if statuses.find("IH {}".format(chan)) != -1 else False
+                if (dev.pluginProps["hostname"], dev.pluginProps["port"]) == (host, port):
+                    if dev.deviceTypeId == "Relay":
+                        state = True if statuses.find("RELAYON {}".format(chan)) != -1 else False
+                    elif dev.deviceTypeId == "Sensor":
+                        state = True if statuses.find("IH {}".format(chan)) != -1 else False
                     dev.updateStateOnServer("onOffState", state)
 
     @staticmethod
