@@ -106,7 +106,7 @@ class Plugin(indigo.PluginBase):
         try:
             while True:
                 self.set_device_states()
-                self.sleep(indigo.activePlugin.pluginPrefs.get("interval", 15))
+                self.sleep(int(indigo.activePlugin.pluginPrefs.get("interval", 15)))
         except self.StopThread:
             pass
 
