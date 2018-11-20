@@ -63,6 +63,9 @@
 					<Option value="8">Input 8</Option>
 				</List>
 			</Field>
+			<Field id="logChanges" type="checkbox" defaultValue="true">
+				<Label>Record Changes to Indigo Log</Label>
+			</Field>
 			<Field id="address" type="textfield" hidden="true"><Label>Address:</Label></Field>
 			<Field id="port" type="textfield" hidden="true"><Label>Port:</Label></Field>
 			<Field id="username" type="textfield" hidden="true"><Label>Username:</Label></Field>
@@ -91,6 +94,12 @@
 			<Field type="button" id="resetPulseCount">
 				<Title>Reset Pulse Count</Title>
 				<CallbackMethod>_reset_device_pulse_count</CallbackMethod>
+			</Field>
+			<Field id="logActions" type="checkbox" defaultValue="true">
+				<Label>Record Actions to Indigo Log</Label>
+			</Field>
+			<Field id="logChanges" type="checkbox" defaultValue="true">
+				<Label>Record Changes to Indigo Log</Label>
 			</Field>
 			<Field id="address" type="textfield" hidden="true"><Label>Address:</Label></Field>
 			<Field id="port" type="textfield" hidden="true"><Label>Port:</Label></Field>

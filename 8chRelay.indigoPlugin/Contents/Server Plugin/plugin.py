@@ -48,15 +48,19 @@ class Plugin(indigo.PluginBase):
                 errors["channel"] = u"Channel must be between 1 and 8."
         except ValueError:
             errors["channel"] = u"Channel must be a number between 1 and 8."
-        else:
-            prefix = "r" if type_id == "Relay" else "i"
-            values["channel"] = channel
-            dev = indigo.devices[did]
-            props = dev.pluginProps
-            values["address"] = u"{}{}:{}:{}".format(prefix, channel, props["hostname"], props["port"])
-            props["address"] = values["address"]
-            dev.replacePluginPropsOnServer(props)
-        return (False if errors else True, values, errors)
+            return (False, values, errors)
+
+        prefix = "r" if type_id == "Relay" else "i"
+        values["channel"] = channel
+        dev = indigo.devices[did]
+        props = dev.pluginProps
+        values["address"] = u"{}{}:{}:{}".format(prefix, channel, props["hostname"], props["port"])
+        props["address"] = values["address"]
+        props["logActions"] = values["logActions"]
+        props["logChanges"] = values["logChanges"]
+        dev.replacePluginPropsOnServer(props)
+        return (True, values)
+
 
     def getDeviceFactoryUiValues(self, dev_id_list):
         """ Called when the device factory config UI is first opened.
@@ -126,6 +130,8 @@ class Plugin(indigo.PluginBase):
                 dev.setErrorStateOnServer(u"Relay Channel Missing! Configure Device Settings.")
             else:
                 dev.updateStateOnServer("onOffState", True)
+                if dev.pluginProps["logActions"]:
+                    indigo.server.log(u"Sent \"{}\" on".format(dev.name))
         elif action.deviceAction == indigo.kDeviceAction.TurnOff:
             try:
                 self.send_cmd(dev.pluginProps, u"D")
@@ -135,15 +141,22 @@ class Plugin(indigo.PluginBase):
                 dev.setErrorStateOnServer(u"Relay Channel Missing! Configure Device Settings.")
             else:
                 dev.updateStateOnServer("onOffState", False)
+                if dev.pluginProps["logActions"]:
+                    indigo.server.log(u"Sent \"{}\" off".format(dev.name))
         elif action.deviceAction == indigo.kDeviceAction.Toggle:
+            command, reply, state = (u"L", "on", True)
+            if dev.states["onOffState"]:
+                command, reply, state = (u"D", "off", False)
             try:
-                self.send_cmd(dev.pluginProps, u"L" if dev.states["onOffState"] else u"D")
+                self.send_cmd(dev.pluginProps, command)
             except (socket.error, EOFError) as err:
                 dev.setErrorStateOnServer("Error toggling relay device: {}".format(err))
             except KeyError:
                 dev.setErrorStateOnServer(u"Relay Channel Missing! Configure Device Settings.")
             else:
-                dev.updateStateOnServer("onOffState", False if dev.states["onOffState"] else True)
+                dev.updateStateOnServer("onOffState", state)
+                if dev.pluginProps["logActions"]:
+                    indigo.server.log(u"Sent \"{}\" {}".format(dev.name, reply))
 
     def _get_device_list(self, filter, values, dev_id_list):
         """ Devices.xml Callback Method to return all sub devices. """
@@ -215,6 +228,8 @@ class Plugin(indigo.PluginBase):
         except KeyError:
             dev.setErrorStateOnServer(u"Relay Channel Missing! Configure Device Settings.")
         else:
+            if dev.pluginProps["logActions"]:
+                indigo.server.log(u"Sent \"{}\" relay pulse".format(dev.name))
             dev.updateStateOnServer("pulseCount", dev.states.get("pulseCount", 0) + 1)
             dev.updateStateOnServer("pulseTimestamp", datetime.now().strftime("%s"))
             dev.updateStateOnServer("onOffState", False)  # Pulse always turns off.
@@ -261,6 +276,9 @@ class Plugin(indigo.PluginBase):
                         state = True if statuses.find("RELAYON {}".format(chan)) != -1 else False
                     elif dev.deviceTypeId == "Sensor":
                         state = True if statuses.find("IH {}".format(chan)) != -1 else False
+                    if dev.states["onOffState"] != state and dev.pluginProps["logChanges"]:
+                        reply = "on" if state else "off"
+                        indigo.server.log(u"Device \"{}\" turned {}".format(dev.name, reply))
                     dev.updateStateOnServer("onOffState", state)
 
     @staticmethod
