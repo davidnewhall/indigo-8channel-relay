@@ -1,7 +1,8 @@
 # Indigo 8 Channel Network Relay Board Plugin
 
 This plugin allows you to control the relays on the 8 channel network relay boards
-being sold on eBay. This plugin also exposes the 8 on-board input sensors.
+being sold on eBay. This plugin also exposes the 8 on-board input sensors. You may
+find this plugin on the [Indigo Plugin Store](https://www.indigodomo.com/pluginstore/196/).
 
 This repo includes two technical documents:
 - [Ethnernet IO Controller V5  Instructions.pdf](docs/Ethnernet_IO_Controller_V5_Instructions.pdf)
