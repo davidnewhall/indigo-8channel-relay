@@ -66,6 +66,9 @@
 			<Field id="logChanges" type="checkbox" defaultValue="true">
 				<Label>Record Changes to Indigo Log</Label>
 			</Field>
+			<Field id="logActions" type="checkbox" defaultValue="true" hidden="true">
+				<Label>Record Actions to Indigo Log</Label>
+			</Field>
 			<Field id="address" type="textfield" hidden="true"><Label>Address:</Label></Field>
 			<Field id="port" type="textfield" hidden="true"><Label>Port:</Label></Field>
 			<Field id="username" type="textfield" hidden="true"><Label>Username:</Label></Field>
