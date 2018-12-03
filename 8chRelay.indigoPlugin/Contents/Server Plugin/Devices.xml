@@ -11,38 +11,67 @@
 			<Field id="port" type="textfield" readonly="true" defaultValue="1234" tooltip="If your device runs on a different port it probably does not work with this plugin">
 				<Label>Port:</Label>
 			</Field>
-
-			<Field type="separator" id="simpleSeparator0" />
-
-			<Field type="list" id="deviceGroupList">
-				<Label>Device Group (8 Max):</Label>
-				<List class="self" method="_get_device_list" dynamicReload="true" />
+			<Field id="irrigationController" type="checkbox" defaultValue="false">
+				<Label>Treat device as Irrigation Controller?</Label>
+				<Description>Relays become Sprinkler Zones</Description>
+				<CallbackMethod>_change_factory_device_type</CallbackMethod>
+			</Field>
+			<Field id="deleteIrrigationWarning" type="label" fontSize="regular" fontColor="darkgray" visibleBindingId="irrigationController" visibleBindingValue="true">
+				<Label>Warning: Changing this will remove all sprinkler schedules and other associated metadata.</Label>
+			</Field>
+			<Field id="deleteAllDevicesWarning" type="label" fontSize="regular" fontColor="darkgray" visibleBindingId="irrigationController" visibleBindingValue="false">
+				<Label>All devices must be removed before this can be changed.</Label>
 			</Field>
 			<Field type="separator" id="simpleSeparator1" />
 
-			<Field type="button" id="addRelayDevice">
+			<Field type="list" id="deviceGroupList" visibleBindingId="irrigationController" visibleBindingValue="false">
+				<Label>Device Group (8 Max):</Label>
+				<List class="self" method="_get_device_list" filter="allPluginDevices" dynamicReload="true" />
+			</Field>
+			<Field id="NumZones" type="menu" defaultValue="1" visibleBindingId="irrigationController" visibleBindingValue="true">
+				<Label>Sprinker Zones (Relays):</Label>
+				<List>
+					<Option value="1">1 Zone</Option>
+					<Option value="2">2 Zones</Option>
+					<Option value="3">3 Zones</Option>
+					<Option value="4">4 Zones</Option>
+					<Option value="5">5 Zones</Option>
+					<Option value="6">6 Zones</Option>
+					<Option value="7">7 Zones</Option>
+					<Option value="8">8 Zones</Option>
+				</List>
+			</Field>
+			<Field id="PumpControlOn" type="checkbox" defaultValue="false" visibleBindingId="irrigationController" visibleBindingValue="true">
+				<Label>Last Zone Controls a Pump</Label>
+			</Field>
+			<Field id="zoneInfo" type="label" fontSize="regular" fontColor="darkgray" visibleBindingId="irrigationController" visibleBindingValue="false">
+				<Label>You may always add or remove zones later.</Label>
+			</Field>
+			<Field type="separator" id="simpleSeparator2" visibleBindingId="irrigationController" visibleBindingValue="true" />
+
+			<Field type="button" id="addRelayDevice" visibleBindingId="irrigationController" visibleBindingValue="false">
 				<Title>Add Relay</Title>
 				<CallbackMethod>_add_relay</CallbackMethod>
 			</Field>
-			<Field type="button" id="addInputSensor">
+			<Field type="button" id="addInputSensor" visibleBindingId="irrigationController" visibleBindingValue="false">
 				<Title>Add Input</Title>
 				<CallbackMethod>_add_sensor</CallbackMethod>
 			</Field>
 
-
-			<Field type="separator" id="simpleSeparator2" />
-
-			<Field type="button" id="removeRelayDevices">
-				<Title>Remove Relays</Title>
-				<CallbackMethod>_remove_relay_devices</CallbackMethod>
+			<Field type="button" id="removeRelayDevices" visibleBindingId="irrigationController" visibleBindingValue="false">
+				<Title>Remove Selected Devices</Title>
+				<CallbackMethod>_remove_devices</CallbackMethod>
 			</Field>
-			<Field type="button" id="removeInputSensors">
-				<Title>Remove Inputs</Title>
-				<CallbackMethod>_remove_input_sensors</CallbackMethod>
+			<Field id="deleteDeviceWarning" type="label" fontSize="regular" fontColor="darkgray" visibleBindingId="irrigationController" visibleBindingValue="false">
+				<Label>Warning: This button is destructive! This will immediately delete devices. Any associated action groups, schedules and control pages will be affected.</Label>
 			</Field>
-			<Field type="button" id="removeAllDevices">
-				<Title>Delete All</Title>
-				<CallbackMethod>_remove_all_devices</CallbackMethod>
+			<Field id="removedDevices" type="textfield" hidden="true" />
+			<Field id="createdDevices" type="textfield" hidden="true" />
+			<Field id="experimentWarning" type="label" fontSize="regular" fontColor="red" visibleBindingId="irrigationController" visibleBindingValue="true">
+				<Label>Sprinkler Support is experimental.</Label>
+			</Field>
+			<Field id="infoAboutDevices" type="label" visibleBindingId="irrigationController" visibleBindingValue="true">
+				<Label>If you wish to control some relays as sprinklers and others as on/off devices, add two Network Relay Board devices with the same IP. The plugin is smart enough to not poll an identical IP twice.</Label>>
 			</Field>
 		</ConfigUI>
 	</DeviceFactory>
@@ -71,10 +100,6 @@
 			</Field>
 			<Field id="address" type="textfield" hidden="true"><Label>Address:</Label></Field>
 			<Field id="port" type="textfield" hidden="true"><Label>Port:</Label></Field>
-			<Field id="username" type="textfield" hidden="true"><Label>Username:</Label></Field>
-			<Field id="password" type="textfield" hidden="true"><Label>Password:</Label></Field>
-			<Field id="timeout" type="textfield" hidden="true"><Label>Timeout:</Label></Field>
-			<Field id="interval" type="textfield" hidden="true"><Label>Interval:</Label></Field>
 		</ConfigUI>
 	</Device>
 
@@ -106,10 +131,6 @@
 			</Field>
 			<Field id="address" type="textfield" hidden="true"><Label>Address:</Label></Field>
 			<Field id="port" type="textfield" hidden="true"><Label>Port:</Label></Field>
-			<Field id="username" type="textfield" hidden="true"><Label>Username:</Label></Field>
-			<Field id="password" type="textfield" hidden="true"><Label>Password:</Label></Field>
-			<Field id="timeout" type="textfield" hidden="true"><Label>Timeout:</Label></Field>
-			<Field id="interval" type="textfield" hidden="true"><Label>Interval:</Label></Field>
 		</ConfigUI>
 		<States>
 			<State id="pulseTimestamp" readonly="YES">
@@ -123,5 +144,155 @@
 				<ControlPageLabel>Pulse Count</ControlPageLabel>
 			</State>
 		</States>
+	</Device>
+
+	<Device type="sprinkler" id="Sprinkler">
+		<Name>Irrigation Relays</Name>
+		<ConfigUI>
+			<Field id="NumZones" type="textfield" hidden="true" defaultValue="1" />
+			<Field id="ZoneNames" type="textfield" hidden="true" defaultValue="1" />
+			<Field id="PumpControlOn" type="checkbox" hidden="true" defaultValue="False" />
+			<Field id="address" type="textfield" hidden="true" />
+			<Field id="port" type="textfield" hidden="true" />
+			<Field id="irrigationController" type="checkbox" hidden="true" />
+			<Field id="zoneName1" type="textfield" defaultValue="Zone 1">
+				<Label>Zone 1 Name:</Label>
+			</Field>
+			<Field id="zoneRelay1" type="menu" defaultValue="1">
+				<Label>Zone 1 Relay Channel:</Label>
+				<List>
+					<Option value="1">Relay 1</Option>
+					<Option value="2">Relay 2</Option>
+					<Option value="3">Relay 3</Option>
+					<Option value="4">Relay 4</Option>
+					<Option value="5">Relay 5</Option>
+					<Option value="6">Relay 6</Option>
+					<Option value="7">Relay 7</Option>
+					<Option value="8">Relay 8</Option>
+				</List>
+			</Field>
+			<Field id="zoneName2" type="textfield" defaultValue="Zone 2" visibleBindingId="NumZones" visibleBindingValue="2,3,4,5,6,7,8">
+				<Label>Zone 2 Name:</Label>
+			</Field>
+			<Field id="zoneRelay2" type="menu" defaultValue="2" visibleBindingId="NumZones" visibleBindingValue="2,3,4,5,6,7,8">
+				<Label>Zone 2 Relay Channel:</Label>
+				<List>
+					<Option value="1">Relay 1</Option>
+					<Option value="2">Relay 2</Option>
+					<Option value="3">Relay 3</Option>
+					<Option value="4">Relay 4</Option>
+					<Option value="5">Relay 5</Option>
+					<Option value="6">Relay 6</Option>
+					<Option value="7">Relay 7</Option>
+					<Option value="8">Relay 8</Option>
+				</List>
+			</Field>
+			<Field id="zoneName3" type="textfield" defaultValue="Zone 3" visibleBindingId="NumZones" visibleBindingValue="3,4,5,6,7,8">
+				<Label>Zone 3 Name:</Label>
+			</Field>
+			<Field id="zoneRelay3" type="menu" defaultValue="3" visibleBindingId="NumZones" visibleBindingValue="3,4,5,6,7,8">
+				<Label>Zone 3 Relay Channel:</Label>
+				<List>
+					<Option value="1">Relay 1</Option>
+					<Option value="2">Relay 2</Option>
+					<Option value="3">Relay 3</Option>
+					<Option value="4">Relay 4</Option>
+					<Option value="5">Relay 5</Option>
+					<Option value="6">Relay 6</Option>
+					<Option value="7">Relay 7</Option>
+					<Option value="8">Relay 8</Option>
+				</List>
+			</Field>
+			<Field id="zoneName4" type="textfield" defaultValue="Zone 4" visibleBindingId="NumZones" visibleBindingValue="4,5,6,7,8">
+				<Label>Zone 4 Name:</Label>
+			</Field>
+			<Field id="zoneRelay4" type="menu" defaultValue="4" visibleBindingId="NumZones" visibleBindingValue="4,5,6,7,8">
+				<Label>Zone 4 Relay Channel:</Label>
+				<List>
+					<Option value="1">Relay 1</Option>
+					<Option value="2">Relay 2</Option>
+					<Option value="3">Relay 3</Option>
+					<Option value="4">Relay 4</Option>
+					<Option value="5">Relay 5</Option>
+					<Option value="6">Relay 6</Option>
+					<Option value="7">Relay 7</Option>
+					<Option value="8">Relay 8</Option>
+				</List>
+			</Field>
+			<Field id="zoneName5" type="textfield" defaultValue="Zone 5" visibleBindingId="NumZones" visibleBindingValue="5,6,7,8">
+				<Label>Zone 5 Name:</Label>
+			</Field>
+			<Field id="zoneRelay5" type="menu" defaultValue="5" visibleBindingId="NumZones" visibleBindingValue="5,6,7,8">
+				<Label>Zone 5 Relay Channel:</Label>
+				<List>
+					<Option value="1">Relay 1</Option>
+					<Option value="2">Relay 2</Option>
+					<Option value="3">Relay 3</Option>
+					<Option value="4">Relay 4</Option>
+					<Option value="5">Relay 5</Option>
+					<Option value="6">Relay 6</Option>
+					<Option value="7">Relay 7</Option>
+					<Option value="8">Relay 8</Option>
+				</List>
+			</Field>
+			<Field id="zoneName6" type="textfield" defaultValue="Zone 6" visibleBindingId="NumZones" visibleBindingValue="6,7,8">
+				<Label>Zone 6 Name:</Label>
+			</Field>
+			<Field id="zoneRelay6" type="menu" defaultValue="6" visibleBindingId="NumZones" visibleBindingValue="6,7,8">
+				<Label>Zone 6 Relay Channel:</Label>
+				<List>
+					<Option value="1">Relay 1</Option>
+					<Option value="2">Relay 2</Option>
+					<Option value="3">Relay 3</Option>
+					<Option value="4">Relay 4</Option>
+					<Option value="5">Relay 5</Option>
+					<Option value="6">Relay 6</Option>
+					<Option value="7">Relay 7</Option>
+					<Option value="8">Relay 8</Option>
+				</List>
+			</Field>
+			<Field id="zoneName7" type="textfield" defaultValue="Zone 7" visibleBindingId="NumZones" visibleBindingValue="7,8">
+				<Label>Zone 7 Name:</Label>
+			</Field>
+			<Field id="zoneRelay7" type="menu" defaultValue="7" visibleBindingId="NumZones" visibleBindingValue="7,8">
+				<Label>Zone 7 Relay Channel:</Label>
+				<List>
+					<Option value="1">Relay 1</Option>
+					<Option value="2">Relay 2</Option>
+					<Option value="3">Relay 3</Option>
+					<Option value="4">Relay 4</Option>
+					<Option value="5">Relay 5</Option>
+					<Option value="6">Relay 6</Option>
+					<Option value="7">Relay 7</Option>
+					<Option value="8">Relay 8</Option>
+				</List>
+			</Field>
+			<Field id="zoneName8" type="textfield" defaultValue="Zone 8" visibleBindingId="NumZones" visibleBindingValue="8">
+				<Label>Zone 8 Name:</Label>
+			</Field>
+			<Field id="zoneRelay8" type="menu" defaultValue="8" visibleBindingId="NumZones" visibleBindingValue="8">
+				<Label>Zone 8 Relay Channel:</Label>
+				<List>
+					<Option value="1">Relay 1</Option>
+					<Option value="2">Relay 2</Option>
+					<Option value="3">Relay 3</Option>
+					<Option value="4">Relay 4</Option>
+					<Option value="5">Relay 5</Option>
+					<Option value="6">Relay 6</Option>
+					<Option value="7">Relay 7</Option>
+					<Option value="8">Relay 8</Option>
+				</List>
+			</Field>
+			<Field id="lastZoneInfo" type="label" fontSize="regular" fontColor="darkgray" visibleBindingId="PumpControlOn" visibleBindingValue="true">
+				<Label>The last zone controls a pump.</Label>
+			</Field>
+			<Field type="separator" id="sprinklerSeparator0" />
+			<Field id="logActions" type="checkbox" defaultValue="true">
+				<Label>Record Actions to Indigo Log</Label>
+			</Field>
+			<Field id="logChanges" type="checkbox" defaultValue="true">
+				<Label>Record Changes to Indigo Log</Label>
+			</Field>
+		</ConfigUI>
 	</Device>
 </Devices>
