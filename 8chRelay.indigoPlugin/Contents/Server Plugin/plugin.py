@@ -23,14 +23,13 @@ class Plugin(indigo.PluginBase):
         errors = indigo.Dict()
         dev = indigo.devices[did]
         props = dev.pluginProps
+        prefix = "i" if type_id == "Sensor" else "r"
         if type_id != "Sprinkler":
             try:
                 channel = int(values["channel"])
             except:
                 channel = 0
-            prefix = "r" if type_id == "Relay" else "i"
         elif type_id == "Sprinkler":
-            prefix = "s"
             channel = ""  # Add all channels here.
             zone_names = ""
             for zone in range(1, int(props["NumZones"])+1):
@@ -47,7 +46,8 @@ class Plugin(indigo.PluginBase):
                     zone_names += ","
                 zone_names += values["zoneName"+str(zone)]
             values["ZoneNames"] = zone_names
-        values["address"] = u"{} {}{}".format(props.get("hostname", values["address"]), prefix, channel)
+        values["address"] = u"{} {}{}".format(props.get("hostname", values["address"]),
+                                              prefix, channel)
         dev.replacePluginPropsOnServer(props)
         return (True, values)
 
@@ -76,14 +76,17 @@ class Plugin(indigo.PluginBase):
                     indigo.device.delete(indigo.devices[int(did)])
                     dev_id_list.remove(int(did))
         else:
-            ic = values.get("irrigationController", False)
+            irrigation = values.get("irrigationController", False)
             # Do not delete the only sprinkler device.
             try:
                 first_device = indigo.devices[dev_id_list[0]].deviceTypeId
-            except:
+            except KeyError:
                 first_device = "none"
-            if ((ic is False or (ic is True and (len(dev_id_list) > 1 or first_device != "Sprinkler"))) and
-                    "removedDevices" in values and values["removedDevices"] != ""):
+            if ("removedDevices" in values and values["removedDevices"] != "" and
+                    (irrigation is False or (irrigation is True and
+                                             (len(dev_id_list) > 1 or
+                                              first_device != "Sprinkler")))):
+                # Really delete all the devices that were removed.
                 for did in values["removedDevices"].split(","):
                     dev = indigo.devices[int(did)]
                     indigo.device.delete(dev)
@@ -101,9 +104,8 @@ class Plugin(indigo.PluginBase):
             dev = indigo.devices[did]
             props = dev.pluginProps
             channel = props.get("channel", 0)
-            prefix = "r" if dev.deviceTypeId == "Relay" else "i"
+            prefix = "i" if dev.deviceTypeId == "Sensor" else "r"
             if dev.deviceTypeId == "Sprinkler":
-                prefix = "s"
                 channel = ""
                 for zone in range(1, int(props["NumZones"])+1):
                     if channel != "":
@@ -189,7 +191,8 @@ class Plugin(indigo.PluginBase):
                 if action.sprinklerAction == indigo.kSprinklerAction.ZoneOn:
                     if zone == action.zoneIndex:
                         cmd, reply, az = u"L", "on", zone
-                    if zone == int(dev.pluginProps["NumZones"]) and dev.pluginProps["PumpControlOn"] is True:
+                    if (zone == int(dev.pluginProps["NumZones"])
+                            and dev.pluginProps["PumpControlOn"] is True):
                         # Turn on the pump too.
                         cmd, reply = u"L", "on"
                 self.send_cmd(zone_info, cmd)
@@ -220,14 +223,17 @@ class Plugin(indigo.PluginBase):
                     if values["removedDevices"] != "":
                         values["removedDevices"] += ","
                     values["removedDevices"] += str(did)
-        values["deviceGroupList"] = [v for v in dev_id_list if v not in values["removedDevices"].split(",")]
+        values["deviceGroupList"] = [v for v in dev_id_list
+                                     if v not in values["removedDevices"].split(",")]
         return values
 
     def _get_device_list(self, filter, values, dev_id_list):
         """ Devices.xml Callback Method to return all sub devices. """
         return_list = list()
         for did in dev_id_list:
-            name = indigo.devices[did].name if did in indigo.devices else u"- device missing -"
+            name = u"- device missing -"
+            if did in indigo.devices:
+                name = indigo.devices[did].name
             if str(did) not in values.get("removedDevices", "").split(","):
                 return_list.append((did, name))
         return return_list
@@ -240,7 +246,9 @@ class Plugin(indigo.PluginBase):
         dev.model = u"8 Channel Network Relay Board"
         dev.subModel = u"Input"
         dev.replaceOnServer()
-        values["createdDevices"] += ","+str(dev.id) if values["createdDevices"] != "" else str(dev.id)
+        if values["createdDevices"]:
+            values["createdDevices"] += ","
+        values["createdDevices"] += str(dev.id)
         return values
 
     def _add_relay(self, values, dev_id_list):
@@ -251,7 +259,9 @@ class Plugin(indigo.PluginBase):
         dev.model = u"8 Channel Network Relay Board"
         dev.subModel = u"Relay"
         dev.replaceOnServer()
-        values["createdDevices"] += ","+str(dev.id) if values["createdDevices"] != "" else str(dev.id)
+        if values["createdDevices"]:
+            values["createdDevices"] += ","
+        values["createdDevices"] += str(dev.id)
         return values
 
     def _add_sprinkler(self, values, dev_id_list):
@@ -260,15 +270,18 @@ class Plugin(indigo.PluginBase):
         dev.model = u"8 Channel Network Relay Board"
         dev.subModel = u"Irrigation"
         dev.replaceOnServer()
-        values["createdDevices"] += ","+str(dev.id) if values["createdDevices"] != "" else str(dev.id)
+        if values["createdDevices"]:
+            values["createdDevices"] += ","
+        values["createdDevices"] += str(dev.id)
         return values
 
     def _remove_devices(self, values, dev_id_list):
         """ Devices.xml Callback Method to remove devices. """
         for did in dev_id_list:
             if str(did) in values["deviceGroupList"]:
-                dev = indigo.devices[did]
-                values["removedDevices"] += ","+str(dev.id) if values["removedDevices"] else str(dev.id)
+                if values["removedDevices"]:
+                    values["removedDevices"] += ","
+                values["removedDevices"] += str(did)
         return values
 
     def _pulse_relay(self, action, dev):
