@@ -23,19 +23,20 @@ class Plugin(indigo.PluginBase):
         errors = indigo.Dict()
         dev = indigo.devices[did]
         props = dev.pluginProps
-        prefix = "i" if type_id == "Sensor" else "r"
         if type_id != "Sprinkler":
             try:
                 channel = int(values["channel"])
             except:
                 channel = 0
+            prefix = "r" if type_id == "Relay" else "i"
         elif type_id == "Sprinkler":
+            prefix = "s"
             channel = ""  # Add all channels here.
             zone_names = ""
             for zone in range(1, int(props["NumZones"])+1):
                 if channel != "":
                     channel += ","
-                channel += values["zoneRelay"+str(zone)]
+                channel += str(values["zoneRelay"+str(zone)])
                 if values["zoneName"+str(zone)] == "":
                     errors["zoneName"+str(zone)] = u"Zone name must not be empty!"
                     return (False, values, errors)
@@ -46,8 +47,7 @@ class Plugin(indigo.PluginBase):
                     zone_names += ","
                 zone_names += values["zoneName"+str(zone)]
             values["ZoneNames"] = zone_names
-        values["address"] = u"{} {}{}".format(props.get("hostname", values["address"]),
-                                              prefix, channel)
+        values["address"] = u"{} {}{}".format(props.get("hostname", values["address"]), prefix, channel)
         dev.replacePluginPropsOnServer(props)
         return (True, values)
 
@@ -76,17 +76,14 @@ class Plugin(indigo.PluginBase):
                     indigo.device.delete(indigo.devices[int(did)])
                     dev_id_list.remove(int(did))
         else:
-            irrigation = values.get("irrigationController", False)
+            ic = values.get("irrigationController", False)
             # Do not delete the only sprinkler device.
             try:
                 first_device = indigo.devices[dev_id_list[0]].deviceTypeId
-            except KeyError:
+            except (IndexError, KeyError):
                 first_device = "none"
-            if ("removedDevices" in values and values["removedDevices"] != "" and
-                    (irrigation is False or (irrigation is True and
-                                             (len(dev_id_list) > 1 or
-                                              first_device != "Sprinkler")))):
-                # Really delete all the devices that were removed.
+            if ((ic is False or (ic is True and (len(dev_id_list) > 1 or first_device != "Sprinkler"))) and
+                    "removedDevices" in values and values["removedDevices"] != ""):
                 for did in values["removedDevices"].split(","):
                     dev = indigo.devices[int(did)]
                     indigo.device.delete(dev)
@@ -104,18 +101,19 @@ class Plugin(indigo.PluginBase):
             dev = indigo.devices[did]
             props = dev.pluginProps
             channel = props.get("channel", 0)
-            prefix = "i" if dev.deviceTypeId == "Sensor" else "r"
-            if dev.deviceTypeId == "Sprinkler":
-                channel = ""
-                for zone in range(1, int(props["NumZones"])+1):
-                    if channel != "":
-                        channel += ","
-                    channel += props.get("zoneRelay"+str(zone), 0)
-                props["irrigationController"] = True
+            prefix = "r" if dev.deviceTypeId == "Relay" else "i"
             props["hostname"] = values.get("address", props.get("hostname", ""))
             props["port"] = values.get("port", props.get("port", "1234"))
             props["NumZones"] = values.get("NumZones", props.get("NumZones", "1"))
             props["PumpControlOn"] = values.get("PumpControlOn", props.get("PumpControlOn", False))
+            if dev.deviceTypeId == "Sprinkler":
+                props["irrigationController"] = True
+                prefix = "s"
+                channel = ""
+                for zone in range(1, int(props["NumZones"])+1):
+                    if channel != "":
+                        channel += ","
+                    channel += str(props.get("zoneRelay"+str(zone), 0))
             props["address"] = u"{} {}{}".format(props["hostname"], prefix, channel)
             dev.replacePluginPropsOnServer(props)
         self.set_device_states()
@@ -191,8 +189,7 @@ class Plugin(indigo.PluginBase):
                 if action.sprinklerAction == indigo.kSprinklerAction.ZoneOn:
                     if zone == action.zoneIndex:
                         cmd, reply, az = u"L", "on", zone
-                    if (zone == int(dev.pluginProps["NumZones"])
-                            and dev.pluginProps["PumpControlOn"] is True):
+                    if zone == int(dev.pluginProps["NumZones"]) and dev.pluginProps["PumpControlOn"]:
                         # Turn on the pump too.
                         cmd, reply = u"L", "on"
                 self.send_cmd(zone_info, cmd)
@@ -206,7 +203,12 @@ class Plugin(indigo.PluginBase):
                 continue
             if dev.pluginProps.get("logActions", True):
                 indigo.server.log(u"Sent \"{} - {}\" {}".format(dev.name, name, reply))
+        dev.updateStateOnServer("unexpectedZone", "None")
+        dev.updateStateOnServer("scheduleRunning", False if az == 0 else True)
         dev.updateStateOnServer("activeZone", az)
+        if az != 0:
+            dev.updateStateOnServer("lastActiveZone", az)
+            dev.updateStateOnServer("lastActiveTime", datetime.now().strftime("%m/%d/%y %H:%M:%S"))
 
     def _change_factory_device_type(self, values, dev_id_list):
         """ Devices.xml Callback Method to make sure changing the factory device type is safe. """
@@ -223,17 +225,14 @@ class Plugin(indigo.PluginBase):
                     if values["removedDevices"] != "":
                         values["removedDevices"] += ","
                     values["removedDevices"] += str(did)
-        values["deviceGroupList"] = [v for v in dev_id_list
-                                     if v not in values["removedDevices"].split(",")]
+        values["deviceGroupList"] = [v for v in dev_id_list if v not in values["removedDevices"].split(",")]
         return values
 
     def _get_device_list(self, filter, values, dev_id_list):
         """ Devices.xml Callback Method to return all sub devices. """
         return_list = list()
         for did in dev_id_list:
-            name = u"- device missing -"
-            if did in indigo.devices:
-                name = indigo.devices[did].name
+            name = indigo.devices[did].name if did in indigo.devices else u"- device missing -"
             if str(did) not in values.get("removedDevices", "").split(","):
                 return_list.append((did, name))
         return return_list
@@ -246,9 +245,7 @@ class Plugin(indigo.PluginBase):
         dev.model = u"8 Channel Network Relay Board"
         dev.subModel = u"Input"
         dev.replaceOnServer()
-        if values["createdDevices"]:
-            values["createdDevices"] += ","
-        values["createdDevices"] += str(dev.id)
+        values["createdDevices"] += ","+str(dev.id) if values["createdDevices"] != "" else str(dev.id)
         return values
 
     def _add_relay(self, values, dev_id_list):
@@ -259,9 +256,7 @@ class Plugin(indigo.PluginBase):
         dev.model = u"8 Channel Network Relay Board"
         dev.subModel = u"Relay"
         dev.replaceOnServer()
-        if values["createdDevices"]:
-            values["createdDevices"] += ","
-        values["createdDevices"] += str(dev.id)
+        values["createdDevices"] += ","+str(dev.id) if values["createdDevices"] != "" else str(dev.id)
         return values
 
     def _add_sprinkler(self, values, dev_id_list):
@@ -270,18 +265,15 @@ class Plugin(indigo.PluginBase):
         dev.model = u"8 Channel Network Relay Board"
         dev.subModel = u"Irrigation"
         dev.replaceOnServer()
-        if values["createdDevices"]:
-            values["createdDevices"] += ","
-        values["createdDevices"] += str(dev.id)
+        values["createdDevices"] += ","+str(dev.id) if values["createdDevices"] != "" else str(dev.id)
         return values
 
     def _remove_devices(self, values, dev_id_list):
         """ Devices.xml Callback Method to remove devices. """
         for did in dev_id_list:
             if str(did) in values["deviceGroupList"]:
-                if values["removedDevices"]:
-                    values["removedDevices"] += ","
-                values["removedDevices"] += str(did)
+                dev = indigo.devices[did]
+                values["removedDevices"] += ","+str(dev.id) if values["removedDevices"] else str(dev.id)
         return values
 
     def _pulse_relay(self, action, dev):
@@ -326,7 +318,7 @@ class Plugin(indigo.PluginBase):
             try:
                 relay = Telnet(host, int(port), timeout)
                 relay.write("DUMP\r\n")
-                states = relay.read_until("OK", timeout).upper()
+                statuses = relay.read_until("OK", timeout).upper()
                 relay.close()
             except (socket.error, EOFError, UnicodeError) as err:
                 for dev in devs:
@@ -343,9 +335,9 @@ class Plugin(indigo.PluginBase):
                     # Device does not match, carry on.
                     continue
                 if dev.deviceTypeId == "Relay":
-                    state = True if states.find("RELAYON " + chan) != -1 else False
+                    state = True if statuses.find("RELAYON {}".format(chan)) != -1 else False
                 elif dev.deviceTypeId == "Sensor":
-                    state = True if states.find("IH " + chan) != -1 else False
+                    state = True if statuses.find("IH {}".format(chan)) != -1 else False
                 if dev.deviceTypeId != "Sprinkler":
                     if dev.pluginProps.get("logChanges", True):
                         if dev.states["onOffState"] != state:
@@ -356,7 +348,8 @@ class Plugin(indigo.PluginBase):
                     continue
 
                 # Check if a sprinkler zone turned on or off unexpectedly!
-                active_zone, now_active = int(dev.states["activeZone"]), 0
+                active_zone = int(dev.states["activeZone"])
+                now_active = active_zone
                 for zone in range(1, int(dev.pluginProps["NumZones"])+1):
                     try:
                         chan = dev.pluginProps["zoneRelay"+str(zone)]
@@ -364,19 +357,27 @@ class Plugin(indigo.PluginBase):
                     except KeyError:
                         continue
                     # match the relay to a zone and update state & log
-                    state = True if states.find("RELAYON " + chan) != -1 else False
-                    if (int(active_zone) != zone and state is True and
+                    state = True if statuses.find("RELAYON {}".format(chan)) != -1 else False
+                    if (active_zone != zone and state is True and
                             (dev.pluginProps["PumpControlOn"] is False
                              or zone != int(dev.pluginProps["NumZones"]))):
                         indigo.server.log(u"Zone \"{} - {}\" unexpectedly turned on"
                                           .format(dev.name, name))
+                        dev.updateStateOnServer("unexpectedZone", name)
                         now_active = zone
-                    if (int(active_zone) == zone and state is False or
+                    if (active_zone == zone and state is False or
                             (dev.pluginProps["PumpControlOn"] is True
                              and zone == int(dev.pluginProps["NumZones"])
                              and active_zone != 0)):
                         indigo.server.log(u"Zone \"{} - {}\" unexpectedly turned off"
                                           .format(dev.name, name))
+                        now_active = 0
+                if now_active == 0:
+                    dev.updateStateOnServer("unexpectedZone", "None")
+                else:
+                    dev.updateStateOnServer("lastActiveZone", now_active)
+                    dev.updateStateOnServer("lastActiveTime", datetime.now().strftime("%m/%d/%y %H:%M:%S"))
+
                 dev.updateStateOnServer("activeZone", now_active)
 
 

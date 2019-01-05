@@ -148,6 +148,28 @@
 
 	<Device type="sprinkler" id="Sprinkler">
 		<Name>Irrigation Relays</Name>
+		<States>
+			<State id="scheduleRunning" readonly="YES">
+				<ValueType>Boolean</ValueType>
+				<TriggerLabel>Schedule Running</TriggerLabel>
+				<ControlPageLabel>Schedule Running</ControlPageLabel>
+			</State>
+			<State id="unexpectedZone" readonly="YES">
+				<ValueType>String</ValueType>
+				<TriggerLabel>Unexpected Zone Activates</TriggerLabel>
+				<ControlPageLabel>Unexpected Zone Active</ControlPageLabel>
+			</State>
+			<State id="lastActiveZone" readonly="YES">
+				<ValueType>String</ValueType>
+				<TriggerLabel>Last Active Zone</TriggerLabel>
+				<ControlPageLabel>Last Active Zone</ControlPageLabel>
+			</State>
+			<State id="lastActiveTime" readonly="YES">
+				<ValueType>String</ValueType>
+				<TriggerLabel>Zone Last Active</TriggerLabel>
+				<ControlPageLabel>Zone Last Active</ControlPageLabel>
+			</State>
+		</States>
 		<ConfigUI>
 			<Field id="NumZones" type="textfield" hidden="true" defaultValue="1" />
 			<Field id="ZoneNames" type="textfield" hidden="true" defaultValue="1" />
