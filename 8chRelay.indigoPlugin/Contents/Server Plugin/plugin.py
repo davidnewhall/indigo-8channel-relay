@@ -102,18 +102,18 @@ class Plugin(indigo.PluginBase):
             props = dev.pluginProps
             channel = props.get("channel", 0)
             prefix = "r" if dev.deviceTypeId == "Relay" else "i"
+            props["hostname"] = values.get("address", props.get("hostname", ""))
+            props["port"] = values.get("port", props.get("port", "1234"))
+            props["NumZones"] = values.get("NumZones", props.get("NumZones", "1"))
+            props["PumpControlOn"] = values.get("PumpControlOn", props.get("PumpControlOn", False))
             if dev.deviceTypeId == "Sprinkler":
+                props["irrigationController"] = True
                 prefix = "s"
                 channel = ""
                 for zone in range(1, int(props["NumZones"])+1):
                     if channel != "":
                         channel += ","
                     channel += props.get("zoneRelay"+str(zone), 0)
-                props["irrigationController"] = True
-            props["hostname"] = values.get("address", props.get("hostname", ""))
-            props["port"] = values.get("port", props.get("port", "1234"))
-            props["NumZones"] = values.get("NumZones", props.get("NumZones", "1"))
-            props["PumpControlOn"] = values.get("PumpControlOn", props.get("PumpControlOn", False))
             props["address"] = u"{} {}{}".format(props["hostname"], prefix, channel)
             dev.replacePluginPropsOnServer(props)
         self.set_device_states()
