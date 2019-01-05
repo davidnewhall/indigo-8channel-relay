@@ -189,7 +189,7 @@ class Plugin(indigo.PluginBase):
                 if action.sprinklerAction == indigo.kSprinklerAction.ZoneOn:
                     if zone == action.zoneIndex:
                         cmd, reply, az = u"L", "on", zone
-                    if zone == int(dev.pluginProps["NumZones"]) and dev.pluginProps["PumpControlOn"] is True:
+                    if zone == int(dev.pluginProps["NumZones"]) and dev.pluginProps["PumpControlOn"]:
                         # Turn on the pump too.
                         cmd, reply = u"L", "on"
                 self.send_cmd(zone_info, cmd)
@@ -203,7 +203,12 @@ class Plugin(indigo.PluginBase):
                 continue
             if dev.pluginProps.get("logActions", True):
                 indigo.server.log(u"Sent \"{} - {}\" {}".format(dev.name, name, reply))
+        dev.updateStateOnServer("unexpectedZone", "None")
+        dev.updateStateOnServer("scheduleRunning", False if az == 0 else True)
         dev.updateStateOnServer("activeZone", az)
+        if az != 0:
+            dev.updateStateOnServer("lastActiveZone", az)
+            dev.updateStateOnServer("lastActiveTime", datetime.now().strftime("%m/%d/%y %H:%M:%S"))
 
     def _change_factory_device_type(self, values, dev_id_list):
         """ Devices.xml Callback Method to make sure changing the factory device type is safe. """
@@ -358,6 +363,7 @@ class Plugin(indigo.PluginBase):
                              or zone != int(dev.pluginProps["NumZones"]))):
                         indigo.server.log(u"Zone \"{} - {}\" unexpectedly turned on"
                                           .format(dev.name, name))
+                        dev.updateStateOnServer("unexpectedZone", name)
                         now_active = zone
                     if (active_zone == zone and state is False or
                             (dev.pluginProps["PumpControlOn"] is True
@@ -365,6 +371,13 @@ class Plugin(indigo.PluginBase):
                              and active_zone != 0)):
                         indigo.server.log(u"Zone \"{} - {}\" unexpectedly turned off"
                                           .format(dev.name, name))
+                        now_active = 0
+                if now_active == 0:
+                    dev.updateStateOnServer("unexpectedZone", "None")
+                else:
+                    dev.updateStateOnServer("lastActiveZone", now_active)
+                    dev.updateStateOnServer("lastActiveTime", datetime.now().strftime("%m/%d/%y %H:%M:%S"))
+
                 dev.updateStateOnServer("activeZone", now_active)
 
 
