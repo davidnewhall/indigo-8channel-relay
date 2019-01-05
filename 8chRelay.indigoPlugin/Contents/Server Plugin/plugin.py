@@ -80,7 +80,7 @@ class Plugin(indigo.PluginBase):
             # Do not delete the only sprinkler device.
             try:
                 first_device = indigo.devices[dev_id_list[0]].deviceTypeId
-            except:
+            except (IndexError, KeyError):
                 first_device = "none"
             if ((ic is False or (ic is True and (len(dev_id_list) > 1 or first_device != "Sprinkler"))) and
                     "removedDevices" in values and values["removedDevices"] != ""):
