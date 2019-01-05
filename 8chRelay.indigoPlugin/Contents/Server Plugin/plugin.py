@@ -36,7 +36,7 @@ class Plugin(indigo.PluginBase):
             for zone in range(1, int(props["NumZones"])+1):
                 if channel != "":
                     channel += ","
-                channel += values["zoneRelay"+str(zone)]
+                channel += str(values["zoneRelay"+str(zone)])
                 if values["zoneName"+str(zone)] == "":
                     errors["zoneName"+str(zone)] = u"Zone name must not be empty!"
                     return (False, values, errors)
@@ -113,7 +113,7 @@ class Plugin(indigo.PluginBase):
                 for zone in range(1, int(props["NumZones"])+1):
                     if channel != "":
                         channel += ","
-                    channel += props.get("zoneRelay"+str(zone), 0)
+                    channel += str(props.get("zoneRelay"+str(zone), 0))
             props["address"] = u"{} {}{}".format(props["hostname"], prefix, channel)
             dev.replacePluginPropsOnServer(props)
         self.set_device_states()
@@ -343,7 +343,8 @@ class Plugin(indigo.PluginBase):
                     continue
 
                 # Check if a sprinkler zone turned on or off unexpectedly!
-                active_zone, now_active = int(dev.states["activeZone"]), 0
+                active_zone = int(dev.states["activeZone"])
+                now_active = active_zone
                 for zone in range(1, int(dev.pluginProps["NumZones"])+1):
                     try:
                         chan = dev.pluginProps["zoneRelay"+str(zone)]
@@ -352,13 +353,13 @@ class Plugin(indigo.PluginBase):
                         continue
                     # match the relay to a zone and update state & log
                     state = True if statuses.find("RELAYON {}".format(chan)) != -1 else False
-                    if (int(active_zone) != zone and state is True and
+                    if (active_zone != zone and state is True and
                             (dev.pluginProps["PumpControlOn"] is False
                              or zone != int(dev.pluginProps["NumZones"]))):
                         indigo.server.log(u"Zone \"{} - {}\" unexpectedly turned on"
                                           .format(dev.name, name))
                         now_active = zone
-                    if (int(active_zone) == zone and state is False or
+                    if (active_zone == zone and state is False or
                             (dev.pluginProps["PumpControlOn"] is True
                              and zone == int(dev.pluginProps["NumZones"])
                              and active_zone != 0)):
