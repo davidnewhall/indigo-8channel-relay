@@ -171,6 +171,7 @@
 			</State>
 		</States>
 		<ConfigUI>
+			<Field id="activeZone" type="textfield" hidden="true" defaultValue="0" />
 			<Field id="NumZones" type="textfield" hidden="true" defaultValue="1" />
 			<Field id="ZoneNames" type="textfield" hidden="true" defaultValue="1" />
 			<Field id="PumpControlOn" type="checkbox" hidden="true" defaultValue="False" />
