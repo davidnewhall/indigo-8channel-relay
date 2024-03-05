@@ -39,4 +39,4 @@ any issues on GitHub.
 
 ## License
 
-- [GPLv2](https://www.gnu.org/licenses/gpl-2.0.txt): See [LICENSE](LICENSE) File
+- MIT: See [LICENSE](LICENSE) File
