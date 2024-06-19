@@ -1,3 +1,7 @@
+# New Home
+
+https://github.com/IndigoDomotics/indigo-8channel-relay
+
 # Indigo 8 Channel Network Relay Board Plugin
 
 This plugin allows you to control the relays on the 8 channel network relay boards
